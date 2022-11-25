@@ -11,13 +11,14 @@ import java.util.UUID;
  *
  * @author Angel
  */
-public class TicketProduct implements Serializable{
+public class TicketProduct implements Serializable {
+
     public UUID id = null;
     public UUID ticketId = null;
     public UUID productId = null;
     public Integer count = null;
-    
-    public TicketProduct(){
-        
+
+    public TicketProduct() {
+
     }
 }
