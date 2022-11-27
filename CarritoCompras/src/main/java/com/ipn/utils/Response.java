@@ -13,5 +13,10 @@ import java.io.Serializable;
  */
 public class Response<T> implements Serializable{
     public Header[] headers;
-    public T[] body;
+    public T body;
+    
+    public Response(Header[] headers, T body){
+        this.headers = headers;
+        this.body = body;
+    }
 }

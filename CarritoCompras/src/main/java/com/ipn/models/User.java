@@ -29,6 +29,7 @@ public class User implements Serializable {
     public String email = null;
     public String password = null;
     public Timestamp createdAt = null;
+    public Boolean isAdmin = null;
 
     public User() {
 
@@ -69,10 +70,11 @@ public class User implements Serializable {
         this.conexion.Conectar();
         PreparedStatement stmt = this.conexion.connection
                 .prepareStatement(
-                        "INSERT INTO public.\"" + this.table + "\" (id,name,last_name,email,password,created_at) VALUES (?,?,?,?,?,?)"
+                        "INSERT INTO public.\"" + this.table + "\" (id,name,last_name,email,password,created_at,is_admin) VALUES (?,?,?,?,?,?,?)"
                 );
         this.id = UUID.randomUUID();
         this.createdAt = new Timestamp(System.currentTimeMillis());
+        this.isAdmin = false;
 
         stmt.setObject(0, this.id);
         stmt.setString(1, this.name);
@@ -80,6 +82,31 @@ public class User implements Serializable {
         stmt.setString(3, this.email);
         stmt.setString(4, this.password);
         stmt.setObject(5, this.createdAt);
+        stmt.setBoolean(6, this.isAdmin);
+
+        int execute = stmt.executeUpdate();
+        this.conexion.Desconectar();
+
+        return execute > 0;
+    }
+    
+    public boolean SaveSuperAdmin() throws SQLException {
+        this.conexion.Conectar();
+        PreparedStatement stmt = this.conexion.connection
+                .prepareStatement(
+                        "INSERT INTO public.\"" + this.table + "\" (id,name,last_name,email,password,created_at, is_admin) VALUES (?,?,?,?,?,?,?)"
+                );
+        this.id = UUID.randomUUID();
+        this.createdAt = new Timestamp(System.currentTimeMillis());
+        this.isAdmin = true;
+
+        stmt.setObject(0, this.id);
+        stmt.setString(1, this.name);
+        stmt.setString(2, this.lastName);
+        stmt.setString(3, this.email);
+        stmt.setString(4, this.password);
+        stmt.setObject(5, this.createdAt);
+        stmt.setBoolean(6, this.isAdmin);
 
         int execute = stmt.executeUpdate();
         this.conexion.Desconectar();

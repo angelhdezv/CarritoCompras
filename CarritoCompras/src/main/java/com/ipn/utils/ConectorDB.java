@@ -19,12 +19,6 @@ public class ConectorDB {
     private String password = null;
     
     public ConectorDB(String user, String psw) {
-        try {
-            Class.forName("org.postgresql.Driver");
-        } catch (ClassNotFoundException ex) {
-            System.out.println("Error al registrar el driver de PostgreSQL: " + ex);
-        }
-        
         this.user = user; 
         this.password = psw; 
     }

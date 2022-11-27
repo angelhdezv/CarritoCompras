@@ -32,24 +32,28 @@ public class Ticket implements Serializable {
         this.products = new ArrayList<>();
     }
 
-    public void AddProduct(Product product, int count) throws SQLException {
+    public boolean AddProduct(Product product, int count) throws SQLException {
         TicketProduct item = new TicketProduct();
 
         item.count = count;
         item.productId = product.id;
 
-        product.UpdateCount(product.count - count);
+        boolean execute = product.UpdateCount(product.count - count);
 
         this.products.add(item);
+        
+        return execute;
     }
 
-    public void DeleteProduct(TicketProduct item) throws SQLException {
+    public boolean DeleteProduct(TicketProduct item) throws SQLException {
         this.products.remove(item);
 
         Product product = new Product();
         product.Get(item.productId);
 
-        product.UpdateCount(product.count + item.count);
+        boolean execute = product.UpdateCount(product.count + item.count);
+        
+        return execute;
     }
 
     public boolean Save(User user) throws SQLException {
