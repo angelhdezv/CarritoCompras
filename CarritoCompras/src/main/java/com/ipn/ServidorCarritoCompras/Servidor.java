@@ -52,7 +52,7 @@ public class Servidor {
         int puerto = Integer.parseInt(br.readLine());
         ServerSocket s = new ServerSocket(puerto);
         s.setReuseAddress(true);
-        System.out.println("Servidor iniciado esperando por archivos..");
+        System.out.println("Servidor iniciado esperando peticiones por el puerto " + puerto);
         for (;;) {
             Socket cl = s.accept();
             System.out.println("Cliente conectado desde " + cl.getInetAddress() + ":" + cl.getPort());
@@ -67,6 +67,7 @@ public class Servidor {
                     oos.writeObject(new Response<>(
                             null, "Servidor en Linea v0.1"
                     ));
+                    System.out.println("Mensaje enviado");
                     break;
                 }
                 case "Login": {

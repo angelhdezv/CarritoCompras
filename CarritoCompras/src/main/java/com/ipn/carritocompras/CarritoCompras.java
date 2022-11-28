@@ -6,18 +6,25 @@ package com.ipn.carritocompras;
 
 import com.ipn.models.Product;
 import com.ipn.models.Ticket;
+import com.ipn.models.TicketProduct;
 import com.ipn.models.User;
 import com.ipn.utils.Request;
 import com.ipn.utils.Response;
 import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -30,7 +37,7 @@ public class CarritoCompras {
      * @throws java.io.IOException
      * @throws java.lang.ClassNotFoundException
      */
-    public static void main(String[] args) throws IOException, ClassNotFoundException {
+    public static void main(String[] args) throws IOException, ClassNotFoundException, SQLException {
 
         User user = null;
         Ticket ticket = null;
@@ -83,7 +90,7 @@ public class CarritoCompras {
 
                         Response<String> response = (Response<String>) ois.readObject();
                         System.out.println(response.body);
-                        
+
                         ois.close();
                         oos.close();
                         server.close();
@@ -116,11 +123,11 @@ public class CarritoCompras {
 
                         Response<String> response = (Response<String>) ois.readObject();
                         System.out.println(response.body);
-                        
+
                         ois.close();
                         oos.close();
                         server.close();
-                        
+
                         break;
                     }
 
@@ -155,7 +162,7 @@ public class CarritoCompras {
                         } else {
                             System.out.println("Algo salio mal, revisar logs");
                         }
-                        
+
                         ois.close();
                         dos.close();
                         oos.close();
@@ -164,22 +171,22 @@ public class CarritoCompras {
                     }
 
                     case 4: {
+                        Request request = new Request();
+                        request.path = "";
+                        
                         Socket server = new Socket(host, puerto);
                         ObjectInputStream ois = new ObjectInputStream(server.getInputStream());
                         ObjectOutputStream oos = new ObjectOutputStream(server.getOutputStream());
-
-                        Request request = new Request();
-                        request.path = "";
 
                         oos.writeObject(request);
 
                         Response<String> response = (Response<String>) ois.readObject();
                         System.out.println(response.body);
-                        
+
                         ois.close();
                         oos.close();
                         server.close();
-                        
+
                         break;
                     }
 
@@ -220,25 +227,7 @@ public class CarritoCompras {
                             } else {
                                 System.out.println("Algo salio mal, revisar logs");
                             }
-                            
-                            request = new Request();
-                            request.path = "ObtenerCatalogo";
 
-                            server = new Socket(host, puerto);
-                            ois = new ObjectInputStream(server.getInputStream());
-                            oos = new ObjectOutputStream(server.getOutputStream());
-
-                            oos.writeObject(request);
-                            Response<List<Product>> response_catalogo = (Response<List<Product>>) ois.readObject();
-
-                            if ("isValid".equals(response_catalogo.headers[0].llave)
-                                    && (boolean) response_catalogo.headers[0].valor == true) {
-                                catalogo = response_catalogo.body;
-                                System.out.println("Catalogo cargado");
-                            } else {
-                                System.out.println("Algo salio mal, revisar logs");
-                            }
-                            
                             ois.close();
                             oos.close();
                             server.close();
@@ -246,6 +235,26 @@ public class CarritoCompras {
                         }
                         case 2: {
                             Product product = SeleccionarProducto(catalogo);
+
+                            Request request = new Request();
+                            request.path = "ObtenerImagenDeProduct";
+
+                            Socket server = new Socket(host, puerto);
+                            ObjectInputStream ois = new ObjectInputStream(server.getInputStream());
+                            ObjectOutputStream oos = new ObjectOutputStream(server.getOutputStream());
+
+                            oos.writeObject(request);
+                            oos.writeObject(product);
+
+                            boolean received = ReceiveFile(server, "Catalogo");
+
+                            if (received) {
+                                System.out.println("Ticket recibido en carpeta Catalogo");
+                            } else {
+                                System.out.println("Algo salio mal, revisar logs");
+                            }
+
+                            server.close();
                             break;
                         }
                         case 3: {
@@ -253,9 +262,46 @@ public class CarritoCompras {
                             break;
                         }
                         case 4: {
+                            if (ticket == null) {
+                                System.out.println("Ticket vacio, inicialice en opcion 3");
+                                break;
+                            }
+
+                            Request request = new Request();
+                            request.path = "GuardarTicket";
+
+                            Socket server = new Socket(host, puerto);
+                            ObjectInputStream ois = new ObjectInputStream(server.getInputStream());
+                            ObjectOutputStream oos = new ObjectOutputStream(server.getOutputStream());
+
+                            oos.writeObject(request);
+                            oos.writeObject(user);
+                            oos.writeObject(ticket);
+
+                            Response<Ticket> response = (Response<Ticket>) ois.readObject();
+
+                            if ("isValid".equals(response.headers[0].llave)
+                                    && (boolean) response.headers[0].valor == true) {
+                                ticket = response.body;
+                                System.out.println("producto agregado correctamente");
+                            } else if ("isValid".equals(response.headers[0].llave)
+                                    && (boolean) response.headers[0].valor == false) {
+                                System.out.println("Error al agregar producto");
+                            } else {
+                                System.out.println("Algo salio mal, revisar logs");
+                            }
+
+                            ois.close();
+                            oos.close();
+                            server.close();
                             break;
                         }
                         case 5: {
+                            if (ticket == null) {
+                                System.out.println("Ticket vacio, inicialice en opcion 3");
+                                break;
+                            }
+
                             Product product = SeleccionarProducto(catalogo);
 
                             Request request = new Request();
@@ -281,13 +327,120 @@ public class CarritoCompras {
                             } else {
                                 System.out.println("Algo salio mal, revisar logs");
                             }
-                            
+
+                            ois.close();
+                            oos.close();
+                            server.close();
+
+                            request = new Request();
+                            request.path = "ObtenerCatalogo";
+
+                            server = new Socket(host, puerto);
+                            ois = new ObjectInputStream(server.getInputStream());
+                            oos = new ObjectOutputStream(server.getOutputStream());
+
+                            oos.writeObject(request);
+                            Response<List<Product>> response_catalogo = (Response<List<Product>>) ois.readObject();
+
+                            if ("isValid".equals(response_catalogo.headers[0].llave)
+                                    && (boolean) response_catalogo.headers[0].valor == true) {
+                                catalogo = response_catalogo.body;
+                                System.out.println("Catalogo cargado");
+                            } else {
+                                System.out.println("Algo salio mal, revisar logs");
+                            }
+
+                            break;
+                        }
+
+                        case 6: {
+                            if (ticket == null) {
+                                System.out.println("Ticket vacio, inicialice en opcion 3");
+                                break;
+                            }
+
+                            TicketProduct product = SeleccionarProductoDelTicket(ticket);
+
+                            Request request = new Request();
+                            request.path = "QuitarProductoATicket";
+
+                            Socket server = new Socket(host, puerto);
+                            ObjectInputStream ois = new ObjectInputStream(server.getInputStream());
+                            ObjectOutputStream oos = new ObjectOutputStream(server.getOutputStream());
+
+                            oos.writeObject(request);
+                            oos.writeObject(ticket);
+                            oos.writeObject(product);
+
+                            Response<Ticket> response = (Response<Ticket>) ois.readObject();
+
+                            if ("isValid".equals(response.headers[0].llave)
+                                    && (boolean) response.headers[0].valor == true) {
+                                ticket = response.body;
+                                System.out.println("producto agregado correctamente");
+                            } else if ("isValid".equals(response.headers[0].llave)
+                                    && (boolean) response.headers[0].valor == false) {
+                                System.out.println("Error al agregar producto");
+                            } else {
+                                System.out.println("Algo salio mal, revisar logs");
+                            }
+
+                            ois.close();
+                            oos.close();
+                            server.close();
+
+                            request = new Request();
+                            request.path = "ObtenerCatalogo";
+
+                            server = new Socket(host, puerto);
+                            ois = new ObjectInputStream(server.getInputStream());
+                            oos = new ObjectOutputStream(server.getOutputStream());
+
+                            oos.writeObject(request);
+                            Response<List<Product>> response_catalogo = (Response<List<Product>>) ois.readObject();
+
+                            if ("isValid".equals(response_catalogo.headers[0].llave)
+                                    && (boolean) response_catalogo.headers[0].valor == true) {
+                                catalogo = response_catalogo.body;
+                                System.out.println("Catalogo cargado");
+                            } else {
+                                System.out.println("Algo salio mal, revisar logs");
+                            }
+
                             ois.close();
                             oos.close();
                             server.close();
 
                             break;
                         }
+
+                        case 7: {
+                            if (ticket == null) {
+                                System.out.println("Ticket vacio, inicialice en opcion 3");
+                                break;
+                            }
+
+                            Request request = new Request();
+                            request.path = "GenerarTicket";
+
+                            Socket server = new Socket(host, puerto);
+                            ObjectInputStream ois = new ObjectInputStream(server.getInputStream());
+                            ObjectOutputStream oos = new ObjectOutputStream(server.getOutputStream());
+
+                            oos.writeObject(request);
+                            oos.writeObject(ticket);
+
+                            boolean received = ReceiveFile(server, "TicketCliente");
+
+                            if (received) {
+                                System.out.println("Ticket recibido en carpeta clientes");
+                            } else {
+                                System.out.println("Algo salio mal, revisar logs");
+                            }
+
+                            break;
+                        }
+
                         default: {
                             return;
                         }
@@ -331,11 +484,11 @@ public class CarritoCompras {
 
                             Response<String> response = (Response<String>) ois.readObject();
                             System.out.println(response.body);
-                            
+
                             ois.close();
                             oos.close();
                             server.close();
-                            
+
                             break;
                         }
                         case 2: {
@@ -357,11 +510,11 @@ public class CarritoCompras {
 
                             Response<String> response = (Response<String>) ois.readObject();
                             System.out.println(response.body);
-                            
+
                             ois.close();
                             oos.close();
                             server.close();
-                            
+
                             break;
                         }
 
@@ -393,5 +546,63 @@ public class CarritoCompras {
         int seleccion = Integer.parseInt(br.readLine()) - 1;
 
         return catalogo.get(seleccion);
+    }
+
+    private static TicketProduct SeleccionarProductoDelTicket(Ticket ticket) throws SQLException, IOException {
+        if (ticket == null) {
+            System.out.println("ticket vacio");
+            return null;
+        }
+
+        System.out.println("Seleccione el producto");
+        for (TicketProduct item : ticket.GetProducts()) {
+            Product producto = new Product();
+            producto.Get(item.productId);
+            System.out.println((ticket.GetProducts().indexOf(item) + 1) + "------" + producto.name);
+            System.out.println("en existencia: " + item.count);
+            System.out.println("");
+        }
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
+        int seleccion = Integer.parseInt(br.readLine()) - 1;
+
+        return ticket.GetProducts().get(seleccion);
+    }
+
+    private static boolean ReceiveFile(Socket server, String carpeta) {
+        try {
+            File f = new File(""); //en raiz de proyecto
+            String ruta = f.getAbsolutePath(); // la ruta a donde va a ir todo
+            String ruta_archivos = ruta + "\\" + carpeta + "\\";
+            System.out.println("ruta:" + ruta_archivos);
+            File f2 = new File(ruta_archivos);
+            f2.mkdirs();
+            f2.setWritable(true);
+            DataInputStream dis = new DataInputStream(server.getInputStream());
+            String nombre = dis.readUTF();
+            long tam = dis.readLong();
+            System.out.println("Comienza descarga del archivo " + nombre + " de " + tam + " bytes\n\n");
+            DataOutputStream dos = new DataOutputStream(new FileOutputStream(ruta_archivos + nombre));
+            long recibidos = 0;
+            int l = 0, porcentaje = 0;
+            while (recibidos < tam) {
+                byte[] b = new byte[1500];
+                l = dis.read(b);
+                System.out.println("leidos: " + l);
+                dos.write(b, 0, l);
+                dos.flush();
+                recibidos = recibidos + l;
+                porcentaje = (int) ((recibidos * 100) / tam);
+                System.out.print("\rRecibido el " + porcentaje + " % del archivo");
+            }//while
+            System.out.println("Archivo recibido..");
+            dos.close();
+            dis.close();
+            return true;
+        } catch (IOException ex) {
+            Logger.getLogger(CarritoCompras.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return false;
     }
 }
