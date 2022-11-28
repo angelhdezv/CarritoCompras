@@ -4,6 +4,10 @@
  */
 package com.ipn.ServidorCarritoCompras;
 
+import com.aspose.pdf.Document;
+import com.aspose.pdf.Page;
+import com.aspose.pdf.TeXFragment;
+import com.aspose.pdf.TextFragment;
 import com.ipn.models.Product;
 import com.ipn.models.Ticket;
 import com.ipn.models.TicketProduct;
@@ -62,12 +66,13 @@ public class Servidor {
             Request request = (Request) ois.readObject();
 
             switch (request.path) {
-                case "":
+                case "": {
                     oos.writeObject(new Response<>(
                             null, "Servidor en Linea v0.1"
                     ));
                     break;
-                case "Login":
+                }
+                case "Login": {
                     String email = dis.readUTF();
                     String password = dis.readUTF();
                     User user = new User();
@@ -84,6 +89,7 @@ public class Servidor {
                         ));
                     }
                     break;
+                }
                 case "ObtenerCatalogo": {
                     Product product = new Product();
                     oos.writeObject(new Response<>(
@@ -91,7 +97,7 @@ public class Servidor {
                     ));
                     break;
                 }
-                case "ObtenerImagenDeProduct":
+                case "ObtenerImagenDeProduct": {
                     Product current_product = (Product) ois.readObject();
                     boolean sended = SendFile(cl, current_product);
                     if (sended) {
@@ -104,6 +110,7 @@ public class Servidor {
                         ));
                     }
                     break;
+                }
                 case "GuardarUsuario": {
                     User new_user = (User) ois.readObject();
                     boolean created = new_user.Save();
@@ -155,12 +162,14 @@ public class Servidor {
                     int count = ois.readInt();
                     boolean added = current_ticket.AddProduct(product, count);
                     if (added) {
+                        Header[] headers = {new Header("isValid", true)};
                         oos.writeObject(new Response<>(
-                                null, "Ok"
+                                headers, current_ticket
                         ));
                     } else {
-                        oos.writeObject(new Response<>(
-                                null, "Error"
+                        Header[] headers = {new Header("isValid", false)};
+                        oos.writeObject(new Response<Ticket>(
+                                headers, null
                         ));
                     }
                     break;
@@ -170,6 +179,23 @@ public class Servidor {
                     TicketProduct item = (TicketProduct) ois.readObject();
                     boolean deleted = current_ticket.DeleteProduct(item);
                     if (deleted) {
+                        Header[] headers = {new Header("isValid", true)};
+                        oos.writeObject(new Response<>(
+                                headers, current_ticket
+                        ));
+                    } else {
+                        Header[] headers = {new Header("isValid", false)};
+                        oos.writeObject(new Response<Ticket>(
+                                headers, null
+                        ));
+                    }
+                    break;
+                }
+                case "GenerarTicket": {
+                    Ticket current_ticket = (Ticket) ois.readObject();
+                    String path = CrearTicket(current_ticket);
+                    boolean sended = SendFile(cl, path);
+                    if (sended) {
                         oos.writeObject(new Response<>(
                                 null, "Ok"
                         ));
@@ -220,9 +246,10 @@ public class Servidor {
                     ));
                     break;
                 }
-                default:
+                default: {
                     System.err.println("InvalidPath");
                     break;
+                }
             }
 
             cl.close();
@@ -269,5 +296,82 @@ public class Servidor {
             System.out.println(ex.toString());
             return false;
         }
+    }
+
+    private static boolean SendFile(Socket cl, String path) {
+        try {
+            File f = new File(path);
+            String nombre = f.getName();
+            path = f.getAbsolutePath();
+            long tam = f.length();
+            //Entrada a la carpeta de donde enviaremos los datos
+            System.out.println("Preparandose pare enviar archivo " + path + " de " + tam + " bytes\n\n");
+            DataOutputStream dos = new DataOutputStream(cl.getOutputStream());
+            DataInputStream dis = new DataInputStream(new FileInputStream(path));
+            //Limpieza y Escritura de los Datos.
+            dos.writeUTF(nombre);
+            dos.flush();
+            dos.writeLong(tam);
+            dos.flush();
+            //Tamaño de los datos a enviar.
+            long enviados = 0;
+            int l = 0, porcentaje = 0;
+            //Enviado de nuestros datos.
+            while (enviados < tam) {
+                byte[] b = new byte[1500];
+                l = dis.read(b);
+                System.out.println("enviados: " + l);
+                //Es
+                dos.write(b, 0, l);
+                dos.flush();
+                enviados = enviados + l;
+                porcentaje = (int) ((enviados * 100) / tam);
+                System.out.print("\rEnviado el " + porcentaje + " % del archivo");
+            }//while
+            //Limpieza de los procesos.
+            System.out.println("\nArchivo enviado..");
+            dis.close();
+            dos.close();
+
+            return true;
+        } catch (IOException ex) {
+            System.out.println(ex.toString());
+            return false;
+        }
+    }
+
+    private static String CrearTicket(Ticket current_ticket) throws SQLException {
+        File f = new File("");
+        String absolutePath = f.getAbsolutePath();
+        String pdfPath = absolutePath + "\\Tickets\\" + current_ticket.id + ".pdf";
+
+        User user = new User();
+        user.Get(current_ticket.userId);
+
+        Document document = new Document();
+
+        Page page = document.getPages().add();
+        page.getParagraphs().add(new TextFragment("Ticket: " + current_ticket.id.toString()));
+        page.getParagraphs().add(new TextFragment("Fecha de compra: " + current_ticket.transactionTime.toString()));
+        page.getParagraphs().add(new TextFragment("------Productos------"));
+        for (TicketProduct item : current_ticket.GetProducts()) {
+            Product product = new Product();
+            product.Get(item.productId);
+
+            page.getParagraphs().add(new TextFragment(product.name + "------" + product.price.toString()));
+            page.getParagraphs().add(new TextFragment("------ X" + item.count.toString()));
+            page.getParagraphs().add(new TextFragment("subtotal: " + (item.count * product.price)));
+        }
+
+        page.getParagraphs().add(new TextFragment(current_ticket.amount.toString()));
+        page.getParagraphs().add(new TextFragment());
+        page.getParagraphs().add(new TextFragment());
+        page.getParagraphs().add(new TextFragment());
+        page.getParagraphs().add(new TextFragment("Id de Usuario: " + user.id));
+        page.getParagraphs().add(new TextFragment(user.name + " " + user.lastName));
+
+        document.save(pdfPath);
+
+        return pdfPath;
     }
 }

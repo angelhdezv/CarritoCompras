@@ -31,6 +31,10 @@ public class Ticket implements Serializable {
     public Ticket() {
         this.products = new ArrayList<>();
     }
+    
+    public List<TicketProduct> GetProducts(){
+        return this.products;
+    }
 
     public boolean AddProduct(Product product, int count) throws SQLException {
         TicketProduct item = new TicketProduct();
