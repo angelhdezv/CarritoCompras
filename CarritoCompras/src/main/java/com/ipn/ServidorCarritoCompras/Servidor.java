@@ -6,7 +6,6 @@ package com.ipn.ServidorCarritoCompras;
 
 import com.aspose.pdf.Document;
 import com.aspose.pdf.Page;
-import com.aspose.pdf.TeXFragment;
 import com.aspose.pdf.TextFragment;
 import com.ipn.models.Product;
 import com.ipn.models.Ticket;
@@ -27,9 +26,6 @@ import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -41,6 +37,7 @@ public class Servidor {
      * @param args the command line arguments
      * @throws java.io.IOException
      * @throws java.lang.ClassNotFoundException
+     * @throws java.sql.SQLException
      */
     public static void main(String[] args) throws IOException, ClassNotFoundException, SQLException {
 
@@ -220,10 +217,11 @@ public class Servidor {
                                     null, "Error"
                             ));
                         }
+                    } else {
+                        oos.writeObject(new Response<>(
+                                null, "Unauthorized"
+                        ));
                     }
-                    oos.writeObject(new Response<>(
-                            null, "Unauthorized"
-                    ));
                     break;
                 }
                 case "EliminarProductoDelCatalogo": {
@@ -240,10 +238,11 @@ public class Servidor {
                                     null, "Error"
                             ));
                         }
+                    } else {
+                        oos.writeObject(new Response<>(
+                                null, "Unauthorized"
+                        ));
                     }
-                    oos.writeObject(new Response<>(
-                            null, "Unauthorized"
-                    ));
                     break;
                 }
                 default: {
@@ -251,7 +250,9 @@ public class Servidor {
                     break;
                 }
             }
-
+            ois.close();
+            dis.close();
+            oos.close();
             cl.close();
         }
     }
