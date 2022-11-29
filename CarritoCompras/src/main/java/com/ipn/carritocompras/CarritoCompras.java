@@ -202,6 +202,7 @@ public class CarritoCompras {
                     System.out.println("5.- Agregar producto");
                     System.out.println("6.- Quitar producto");
                     System.out.println("7.- Obtener ticket para imprimir");
+                    System.out.println("8.- Ver carrito de compras");
                     System.out.println("0.- Terminar programa");
 
                     option = Integer.parseInt(br.readLine());
@@ -432,8 +433,30 @@ public class CarritoCompras {
                             } else {
                                 System.out.println("Algo salio mal, revisar logs");
                             }
-                            
+
                             server.close();
+                            break;
+                        }
+
+                        case 8: {
+                            if (ticket == null) {
+                                System.out.println("Ticket vacio, inicialice en opcion 3");
+                                break;
+                            } else {
+                                if (ticket.GetProducts().isEmpty()) {
+                                    System.out.println("sin productos");
+                                } else {
+
+                                    for (TicketProduct item : ticket.GetProducts()) {
+                                        Product producto = new Product();
+                                        producto.Get(item.productId);
+                                        System.out.println((ticket.GetProducts().indexOf(item) + 1) + "------" + producto.name);
+                                        System.out.println("cantidad: " + item.count);
+                                        System.out.println("");
+                                    }
+                                }
+                            }
+
                             break;
                         }
 
@@ -555,7 +578,7 @@ public class CarritoCompras {
             Product producto = new Product();
             producto.Get(item.productId);
             System.out.println((ticket.GetProducts().indexOf(item) + 1) + "------" + producto.name);
-            System.out.println("en existencia: " + item.count);
+            System.out.println("cantidad: " + item.count);
             System.out.println("");
         }
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));

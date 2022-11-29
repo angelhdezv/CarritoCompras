@@ -58,9 +58,9 @@ public class Servidor {
             ObjectOutputStream oos = new ObjectOutputStream(cl.getOutputStream());
             ObjectInputStream ois = new ObjectInputStream(cl.getInputStream());
             Request request = (Request) ois.readObject();
-            
-            System.out.println("[" + cl.getInetAddress() + ":" + cl.getPort()+ "] " + request.path);
-            
+
+            System.out.println("[" + cl.getInetAddress() + ":" + cl.getPort() + "] " + request.path);
+
             switch (request.path) {
                 case "": {
                     oos.writeObject(new Response<>(
@@ -153,27 +153,28 @@ public class Servidor {
                 case "AgregarProductoATicket": {
                     Ticket current_ticket = (Ticket) ois.readObject();
                     Product product = (Product) ois.readObject();
-                    
-                    System.out.println("Datos semicompletos");
-                    
+
                     Integer count = (Integer) ois.readObject();
-                    
-                    System.out.println("Datos completos");
-                    
-                    boolean added = current_ticket.AddProduct(product, count);
-                    
-                    System.out.println("Added: "+added);
-                    if (added) {
-                        Header[] headers = {new Header("isValid", true)};
-                        oos.writeObject(new Response<>(
-                                headers, current_ticket
-                        ));
+
+                    if (count <= product.count) {
+                        boolean added = current_ticket.AddProduct(product, count);
+
+                        System.out.println("Added: " + added);
+                        if (added) {
+                            Header[] headers = {new Header("isValid", true)};
+                            oos.writeObject(new Response<>(
+                                    headers, current_ticket
+                            ));
+                        } else {
+
+                        }
                     } else {
                         Header[] headers = {new Header("isValid", false)};
                         oos.writeObject(new Response<Ticket>(
                                 headers, null
                         ));
                     }
+
                     break;
                 }
                 case "QuitarProductoATicket": {
@@ -363,7 +364,7 @@ public class Servidor {
         page.getParagraphs().add(new TextFragment());
         page.getParagraphs().add(new TextFragment());
         page.getParagraphs().add(new TextFragment());
-        page.getParagraphs().add(new TextFragment("TOTAL de la compra: $"+current_ticket.amount.toString()));
+        page.getParagraphs().add(new TextFragment("TOTAL de la compra: $" + current_ticket.amount));
         page.getParagraphs().add(new TextFragment());
         page.getParagraphs().add(new TextFragment());
         page.getParagraphs().add(new TextFragment());

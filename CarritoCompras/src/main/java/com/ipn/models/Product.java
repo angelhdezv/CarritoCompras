@@ -48,7 +48,7 @@ public class Product implements Serializable {
         List<Product> all = new ArrayList<>();
         this.conexion.Conectar();
         Statement stmt = this.conexion.connection.createStatement();
-        ResultSet result = stmt.executeQuery("SELECT * FROM public.\"" + this.table + "\"");
+        ResultSet result = stmt.executeQuery("SELECT * FROM public.\"" + this.table + "\" where \"count\">0");
         while (result.next()) {
             Product Product = new Product();
             Product.id = result.getObject("id", UUID.class);
