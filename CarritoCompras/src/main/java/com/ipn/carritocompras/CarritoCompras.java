@@ -450,7 +450,6 @@ public class CarritoCompras {
                                     for (TicketProduct item : ticket.GetProducts()) {
                                         Product producto = new Product();
                                         producto = ObtenerProductoDesdeServidor(item.productId, host, puerto);
-                                        producto.Get(item.productId);
                                         System.out.println((ticket.GetProducts().indexOf(item) + 1) + "------" + producto.name);
                                         System.out.println("cantidad: " + item.count);
                                         System.out.println("");
@@ -578,7 +577,6 @@ public class CarritoCompras {
         for (TicketProduct item : ticket.GetProducts()) {
             Product producto = new Product();
             producto = ObtenerProductoDesdeServidor(item.productId, host, puerto);
-            producto.Get(item.productId);
             System.out.println((ticket.GetProducts().indexOf(item) + 1) + "------" + producto.name);
             System.out.println("cantidad: " + item.count);
             System.out.println("");
