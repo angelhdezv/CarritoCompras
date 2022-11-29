@@ -639,6 +639,10 @@ public class CarritoCompras {
         
         Response<Product> response = (Response<Product>) ois.readObject();
         
+        oos.close();
+        ois.close();
+        server.close();
+        
         return response.body;
     }
 }
