@@ -360,7 +360,7 @@ public class CarritoCompras {
                                 break;
                             }
 
-                            TicketProduct product = SeleccionarProductoDelTicket(ticket);
+                            TicketProduct product = SeleccionarProductoDelTicket(ticket, host, puerto);
 
                             Request request = new Request();
                             request.path = "QuitarProductoATicket";
@@ -449,6 +449,7 @@ public class CarritoCompras {
 
                                     for (TicketProduct item : ticket.GetProducts()) {
                                         Product producto = new Product();
+                                        producto = ObtenerProductoDesdeServidor(item.productId, host, puerto);
                                         producto.Get(item.productId);
                                         System.out.println((ticket.GetProducts().indexOf(item) + 1) + "------" + producto.name);
                                         System.out.println("cantidad: " + item.count);
@@ -567,7 +568,7 @@ public class CarritoCompras {
         return catalogo.get(seleccion);
     }
 
-    private static TicketProduct SeleccionarProductoDelTicket(Ticket ticket) throws SQLException, IOException {
+    private static TicketProduct SeleccionarProductoDelTicket(Ticket ticket, String host, int puerto) throws SQLException, IOException, ClassNotFoundException {
         if (ticket == null) {
             System.out.println("ticket vacio");
             return null;
@@ -576,6 +577,7 @@ public class CarritoCompras {
         System.out.println("Seleccione el producto");
         for (TicketProduct item : ticket.GetProducts()) {
             Product producto = new Product();
+            producto = ObtenerProductoDesdeServidor(item.productId, host, puerto);
             producto.Get(item.productId);
             System.out.println((ticket.GetProducts().indexOf(item) + 1) + "------" + producto.name);
             System.out.println("cantidad: " + item.count);
@@ -622,5 +624,21 @@ public class CarritoCompras {
         }
 
         return false;
+    }
+
+    private static Product ObtenerProductoDesdeServidor(UUID productId, String host, int puerto) throws IOException, ClassNotFoundException {
+        Socket server = new Socket(host, puerto);
+        ObjectInputStream ois = new ObjectInputStream(server.getInputStream());
+        ObjectOutputStream oos = new ObjectOutputStream(server.getOutputStream());
+
+        Request request = new Request();
+        request.path = "ObtenerProducto";
+
+        oos.writeObject(request);
+        oos.writeObject(productId);
+        
+        Response<Product> response = (Response<Product>) ois.readObject();
+        
+        return response.body;
     }
 }

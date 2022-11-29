@@ -26,6 +26,7 @@ import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.SQLException;
+import java.util.UUID;
 
 /**
  *
@@ -205,6 +206,18 @@ public class Servidor {
                     }
                     break;
                 }
+
+                case "ObtenerProducto": {
+                    UUID id = (UUID) ois.readObject();
+                    Product producto = new Product();
+                    producto.Get(id);
+                    oos.writeObject(new Response<>(
+                            null, producto
+                    ));
+
+                    break;
+                }
+
                 case "AgregarProductoACatalogo": {
                     User current_user = (User) ois.readObject();
                     Product product = (Product) ois.readObject();
