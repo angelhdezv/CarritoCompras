@@ -55,22 +55,21 @@ public class Servidor {
         System.out.println("Servidor iniciado esperando peticiones por el puerto " + puerto);
         for (;;) {
             Socket cl = s.accept();
-            System.out.println("Cliente conectado desde " + cl.getInetAddress() + ":" + cl.getPort());
-            ObjectInputStream ois = new ObjectInputStream(cl.getInputStream());
-            DataInputStream dis = new DataInputStream(cl.getInputStream());
             ObjectOutputStream oos = new ObjectOutputStream(cl.getOutputStream());
-
+            ObjectInputStream ois = new ObjectInputStream(cl.getInputStream());
             Request request = (Request) ois.readObject();
-
+            
+            System.out.println("[" + cl.getInetAddress() + ":" + cl.getPort()+ "] " + request.path);
+            
             switch (request.path) {
                 case "": {
                     oos.writeObject(new Response<>(
                             null, "Servidor en Linea v0.1"
                     ));
-                    System.out.println("Mensaje enviado");
                     break;
                 }
                 case "Login": {
+                    DataInputStream dis = new DataInputStream(cl.getInputStream());
                     String email = dis.readUTF();
                     String password = dis.readUTF();
                     User user = new User();
@@ -86,6 +85,7 @@ public class Servidor {
                                 headers, null
                         ));
                     }
+                    dis.close();
                     break;
                 }
                 case "ObtenerCatalogo": {
@@ -99,13 +99,9 @@ public class Servidor {
                     Product current_product = (Product) ois.readObject();
                     boolean sended = SendFile(cl, current_product);
                     if (sended) {
-                        oos.writeObject(new Response<>(
-                                null, "Ok"
-                        ));
+                        System.out.println("Enviado");
                     } else {
-                        oos.writeObject(new Response<>(
-                                null, "Error"
-                        ));
+                        System.out.println("Error");
                     }
                     break;
                 }
@@ -157,8 +153,16 @@ public class Servidor {
                 case "AgregarProductoATicket": {
                     Ticket current_ticket = (Ticket) ois.readObject();
                     Product product = (Product) ois.readObject();
-                    int count = ois.readInt();
+                    
+                    System.out.println("Datos semicompletos");
+                    
+                    Integer count = (Integer) ois.readObject();
+                    
+                    System.out.println("Datos completos");
+                    
                     boolean added = current_ticket.AddProduct(product, count);
+                    
+                    System.out.println("Added: "+added);
                     if (added) {
                         Header[] headers = {new Header("isValid", true)};
                         oos.writeObject(new Response<>(
@@ -194,13 +198,9 @@ public class Servidor {
                     String path = CrearTicket(current_ticket);
                     boolean sended = SendFile(cl, path);
                     if (sended) {
-                        oos.writeObject(new Response<>(
-                                null, "Ok"
-                        ));
+                        System.out.println("Enviado");
                     } else {
-                        oos.writeObject(new Response<>(
-                                null, "Error"
-                        ));
+                        System.out.println("Error");
                     }
                     break;
                 }
@@ -252,7 +252,6 @@ public class Servidor {
                 }
             }
             ois.close();
-            dis.close();
             oos.close();
             cl.close();
         }
@@ -290,8 +289,6 @@ public class Servidor {
             }//while
             //Limpieza de los procesos.
             System.out.println("\nArchivo enviado..");
-            dis.close();
-            dos.close();
 
             return true;
         } catch (IOException ex) {
@@ -332,8 +329,6 @@ public class Servidor {
             }//while
             //Limpieza de los procesos.
             System.out.println("\nArchivo enviado..");
-            dis.close();
-            dos.close();
 
             return true;
         } catch (IOException ex) {
@@ -360,12 +355,15 @@ public class Servidor {
             Product product = new Product();
             product.Get(item.productId);
 
-            page.getParagraphs().add(new TextFragment(product.name + "------" + product.price.toString()));
+            page.getParagraphs().add(new TextFragment(product.name + "------ $" + product.price.toString()));
             page.getParagraphs().add(new TextFragment("------ X" + item.count.toString()));
-            page.getParagraphs().add(new TextFragment("subtotal: " + (item.count * product.price)));
+            page.getParagraphs().add(new TextFragment("subtotal: $" + (item.count * product.price)));
         }
 
-        page.getParagraphs().add(new TextFragment(current_ticket.amount.toString()));
+        page.getParagraphs().add(new TextFragment());
+        page.getParagraphs().add(new TextFragment());
+        page.getParagraphs().add(new TextFragment());
+        page.getParagraphs().add(new TextFragment("TOTAL de la compra: $"+current_ticket.amount.toString()));
         page.getParagraphs().add(new TextFragment());
         page.getParagraphs().add(new TextFragment());
         page.getParagraphs().add(new TextFragment());

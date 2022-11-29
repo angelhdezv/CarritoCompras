@@ -173,13 +173,11 @@ public class CarritoCompras {
                     case 4: {
                         Request request = new Request();
                         request.path = "";
-                        
+
                         Socket server = new Socket(host, puerto);
                         ObjectInputStream ois = new ObjectInputStream(server.getInputStream());
                         ObjectOutputStream oos = new ObjectOutputStream(server.getOutputStream());
-
                         oos.writeObject(request);
-
                         Response<String> response = (Response<String>) ois.readObject();
                         System.out.println(response.body);
 
@@ -220,13 +218,8 @@ public class CarritoCompras {
                             oos.writeObject(request);
                             Response<List<Product>> response = (Response<List<Product>>) ois.readObject();
 
-                            if ("isValid".equals(response.headers[0].llave)
-                                    && (boolean) response.headers[0].valor == true) {
-                                catalogo = response.body;
-                                System.out.println("Catalogo cargado");
-                            } else {
-                                System.out.println("Algo salio mal, revisar logs");
-                            }
+                            catalogo = response.body;
+                            System.out.println("Catalogo cargado");
 
                             ois.close();
                             oos.close();
@@ -236,25 +229,28 @@ public class CarritoCompras {
                         case 2: {
                             Product product = SeleccionarProducto(catalogo);
 
-                            Request request = new Request();
-                            request.path = "ObtenerImagenDeProduct";
+                            if (product != null) {
+                                Request request = new Request();
+                                request.path = "ObtenerImagenDeProduct";
 
-                            Socket server = new Socket(host, puerto);
-                            ObjectInputStream ois = new ObjectInputStream(server.getInputStream());
-                            ObjectOutputStream oos = new ObjectOutputStream(server.getOutputStream());
+                                Socket server = new Socket(host, puerto);
+                                ObjectInputStream ois = new ObjectInputStream(server.getInputStream());
+                                ObjectOutputStream oos = new ObjectOutputStream(server.getOutputStream());
 
-                            oos.writeObject(request);
-                            oos.writeObject(product);
+                                oos.writeObject(request);
+                                oos.writeObject(product);
 
-                            boolean received = ReceiveFile(server, "Catalogo");
+                                boolean received = ReceiveFile(server, "Catalogo");
 
-                            if (received) {
-                                System.out.println("Ticket recibido en carpeta Catalogo");
-                            } else {
-                                System.out.println("Algo salio mal, revisar logs");
+                                if (received) {
+                                    System.out.println("Ticket recibido en carpeta Catalogo");
+                                } else {
+                                    System.out.println("Algo salio mal, revisar logs");
+                                }
+
+                                server.close();
                             }
 
-                            server.close();
                             break;
                         }
                         case 3: {
@@ -304,50 +300,54 @@ public class CarritoCompras {
 
                             Product product = SeleccionarProducto(catalogo);
 
-                            Request request = new Request();
-                            request.path = "AgregarProductoATicket";
+                            if (product != null) {
+                                System.out.println("Cuantos productos: ");
 
-                            Socket server = new Socket(host, puerto);
-                            ObjectInputStream ois = new ObjectInputStream(server.getInputStream());
-                            ObjectOutputStream oos = new ObjectOutputStream(server.getOutputStream());
+                                int count = Integer.parseInt(br.readLine());
+                                Request request = new Request();
+                                request.path = "AgregarProductoATicket";
 
-                            oos.writeObject(request);
-                            oos.writeObject(ticket);
-                            oos.writeObject(product);
+                                Socket server = new Socket(host, puerto);
+                                ObjectInputStream ois = new ObjectInputStream(server.getInputStream());
+                                ObjectOutputStream oos = new ObjectOutputStream(server.getOutputStream());
 
-                            Response<Ticket> response = (Response<Ticket>) ois.readObject();
+                                oos.writeObject(request);
+                                oos.writeObject(ticket);
+                                oos.writeObject(product);
+                                oos.writeObject(count);
 
-                            if ("isValid".equals(response.headers[0].llave)
-                                    && (boolean) response.headers[0].valor == true) {
-                                ticket = response.body;
-                                System.out.println("producto agregado correctamente");
-                            } else if ("isValid".equals(response.headers[0].llave)
-                                    && (boolean) response.headers[0].valor == false) {
-                                System.out.println("Error al agregar producto");
-                            } else {
-                                System.out.println("Algo salio mal, revisar logs");
-                            }
+                                System.out.println("Objetos enviados");
 
-                            ois.close();
-                            oos.close();
-                            server.close();
+                                Response<Ticket> response = (Response<Ticket>) ois.readObject();
 
-                            request = new Request();
-                            request.path = "ObtenerCatalogo";
+                                if ("isValid".equals(response.headers[0].llave)
+                                        && (boolean) response.headers[0].valor == true) {
+                                    ticket = response.body;
+                                    System.out.println("producto agregado correctamente");
+                                } else if ("isValid".equals(response.headers[0].llave)
+                                        && (boolean) response.headers[0].valor == false) {
+                                    System.out.println("Error al agregar producto");
+                                } else {
+                                    System.out.println("Algo salio mal, revisar logs");
+                                }
 
-                            server = new Socket(host, puerto);
-                            ois = new ObjectInputStream(server.getInputStream());
-                            oos = new ObjectOutputStream(server.getOutputStream());
+                                ois.close();
+                                oos.close();
+                                server.close();
 
-                            oos.writeObject(request);
-                            Response<List<Product>> response_catalogo = (Response<List<Product>>) ois.readObject();
+                                request = new Request();
+                                request.path = "ObtenerCatalogo";
 
-                            if ("isValid".equals(response_catalogo.headers[0].llave)
-                                    && (boolean) response_catalogo.headers[0].valor == true) {
+                                server = new Socket(host, puerto);
+                                ois = new ObjectInputStream(server.getInputStream());
+                                oos = new ObjectOutputStream(server.getOutputStream());
+
+                                oos.writeObject(request);
+                                Response<List<Product>> response_catalogo = (Response<List<Product>>) ois.readObject();
+
                                 catalogo = response_catalogo.body;
                                 System.out.println("Catalogo cargado");
-                            } else {
-                                System.out.println("Algo salio mal, revisar logs");
+
                             }
 
                             break;
@@ -399,13 +399,8 @@ public class CarritoCompras {
                             oos.writeObject(request);
                             Response<List<Product>> response_catalogo = (Response<List<Product>>) ois.readObject();
 
-                            if ("isValid".equals(response_catalogo.headers[0].llave)
-                                    && (boolean) response_catalogo.headers[0].valor == true) {
-                                catalogo = response_catalogo.body;
-                                System.out.println("Catalogo cargado");
-                            } else {
-                                System.out.println("Algo salio mal, revisar logs");
-                            }
+                            catalogo = response_catalogo.body;
+                            System.out.println("Catalogo cargado");
 
                             ois.close();
                             oos.close();
@@ -437,7 +432,8 @@ public class CarritoCompras {
                             } else {
                                 System.out.println("Algo salio mal, revisar logs");
                             }
-
+                            
+                            server.close();
                             break;
                         }
 
@@ -596,8 +592,7 @@ public class CarritoCompras {
                 System.out.print("\rRecibido el " + porcentaje + " % del archivo");
             }//while
             System.out.println("Archivo recibido..");
-            dos.close();
-            dis.close();
+
             return true;
         } catch (IOException ex) {
             Logger.getLogger(CarritoCompras.class.getName()).log(Level.SEVERE, null, ex);

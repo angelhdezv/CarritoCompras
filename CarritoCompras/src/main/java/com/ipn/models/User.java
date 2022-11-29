@@ -21,8 +21,8 @@ import java.util.UUID;
  */
 public class User implements Serializable {
 
-    transient private ConectorDB conexion = new ConectorDB("postgres", "postgres");
-    transient private String table = "user";
+    private transient ConectorDB conexion;
+    private final String table = "user";
     public UUID id = null;
     public String name = null;
     public String lastName = null;
@@ -32,7 +32,7 @@ public class User implements Serializable {
     public Boolean isAdmin = null;
 
     public User() {
-
+        
     }
 
     public User(
@@ -47,6 +47,7 @@ public class User implements Serializable {
     }
 
     public List<User> All() throws SQLException {
+        this.conexion = new ConectorDB("postgres", "postgres");
         List<User> all = new ArrayList<>();
         this.conexion.Conectar();
         Statement stmt = this.conexion.connection.createStatement();
@@ -67,6 +68,7 @@ public class User implements Serializable {
     }
 
     public boolean Save() throws SQLException {
+        this.conexion = new ConectorDB("postgres", "postgres");
         this.conexion.Conectar();
         PreparedStatement stmt = this.conexion.connection
                 .prepareStatement(
@@ -76,13 +78,13 @@ public class User implements Serializable {
         this.createdAt = new Timestamp(System.currentTimeMillis());
         this.isAdmin = false;
 
-        stmt.setObject(0, this.id);
-        stmt.setString(1, this.name);
-        stmt.setString(2, this.lastName);
-        stmt.setString(3, this.email);
-        stmt.setString(4, this.password);
-        stmt.setObject(5, this.createdAt);
-        stmt.setBoolean(6, this.isAdmin);
+        stmt.setObject(1, this.id);
+        stmt.setString(2, this.name);
+        stmt.setString(3, this.lastName);
+        stmt.setString(4, this.email);
+        stmt.setString(5, this.password);
+        stmt.setObject(6, this.createdAt);
+        stmt.setBoolean(7, this.isAdmin);
 
         int execute = stmt.executeUpdate();
         this.conexion.Desconectar();
@@ -91,6 +93,8 @@ public class User implements Serializable {
     }
     
     public boolean SaveSuperAdmin() throws SQLException {
+        this.conexion = new ConectorDB("postgres", "postgres");
+        System.out.println(this.conexion);
         this.conexion.Conectar();
         PreparedStatement stmt = this.conexion.connection
                 .prepareStatement(
@@ -100,13 +104,13 @@ public class User implements Serializable {
         this.createdAt = new Timestamp(System.currentTimeMillis());
         this.isAdmin = true;
 
-        stmt.setObject(0, this.id);
-        stmt.setString(1, this.name);
-        stmt.setString(2, this.lastName);
-        stmt.setString(3, this.email);
-        stmt.setString(4, this.password);
-        stmt.setObject(5, this.createdAt);
-        stmt.setBoolean(6, this.isAdmin);
+        stmt.setObject(1, this.id);
+        stmt.setString(2, this.name);
+        stmt.setString(3, this.lastName);
+        stmt.setString(4, this.email);
+        stmt.setString(5, this.password);
+        stmt.setObject(6, this.createdAt);
+        stmt.setBoolean(7, this.isAdmin);
 
         int execute = stmt.executeUpdate();
         this.conexion.Desconectar();
@@ -115,6 +119,7 @@ public class User implements Serializable {
     }
 
     public void Get(UUID id) throws SQLException {
+        this.conexion = new ConectorDB("postgres", "postgres");
         this.conexion.Conectar();
         Statement stmt = this.conexion.connection.createStatement();
         ResultSet result = stmt.executeQuery("SELECT * FROM public.\"" + this.table + "\" where id = '" + id.toString() + "'");
@@ -125,6 +130,7 @@ public class User implements Serializable {
             this.email = result.getString("email");
             this.password = result.getString("password");
             this.createdAt = result.getObject("created_at", Timestamp.class);
+            this.isAdmin = result.getBoolean("is_admin");
             break;
         }
         result.close();
@@ -132,6 +138,7 @@ public class User implements Serializable {
     }
 
     public void GetByEmail(String email) throws SQLException {
+        this.conexion = new ConectorDB("postgres", "postgres");
         this.conexion.Conectar();
         Statement stmt = this.conexion.connection.createStatement();
         ResultSet result = stmt.executeQuery("SELECT * FROM public.\"" + this.table + "\" where email = '" + email + "'");
@@ -142,6 +149,7 @@ public class User implements Serializable {
             this.email = result.getString("email");
             this.password = result.getString("password");
             this.createdAt = result.getObject("created_at", Timestamp.class);
+            this.isAdmin = result.getBoolean("is_admin");
             break;
         }
         result.close();
@@ -149,13 +157,14 @@ public class User implements Serializable {
     }
 
     public boolean Delete() throws SQLException {
+        this.conexion = new ConectorDB("postgres", "postgres");
         this.conexion.Conectar();
         PreparedStatement stmt = this.conexion.connection
                 .prepareStatement(
                         "DELETE FROM public.\"" + this.table + "\" WHERE id = ? "
                 );
 
-        stmt.setObject(0, this.id);
+        stmt.setObject(1, this.id);
 
         int execute = stmt.executeUpdate();
         this.conexion.Desconectar();

@@ -19,9 +19,9 @@ import java.util.UUID;
  */
 public class Ticket implements Serializable {
 
-    transient private ConectorDB conexion = new ConectorDB("postgres", "postgres");
-    transient private String table = "ticket";
-    transient private String table_items = "ticket_product";
+    private transient ConectorDB conexion;
+    private final String table = "ticket";
+    private final String table_items = "ticket_product";
     public UUID id = null;
     public UUID userId = null;
     public Float amount = null;
@@ -29,6 +29,7 @@ public class Ticket implements Serializable {
     private List<TicketProduct> products = null;
 
     public Ticket() {
+        this.conexion = new ConectorDB("postgres", "postgres");
         this.products = new ArrayList<>();
     }
     
@@ -65,17 +66,19 @@ public class Ticket implements Serializable {
         this.userId = user.id;
         this.transactionTime = new Timestamp(System.currentTimeMillis());
         this.amount = CalculateAmount();
-
+        this.conexion = new ConectorDB("postgres", "postgres");
         this.conexion.Conectar();
         PreparedStatement stmt_ticket = this.conexion.connection
                 .prepareStatement(
-                        "INSERT INTO public.\"" + this.table + "\" (id,user,amount,transaction_time) VALUES (?,?,?,?)"
+                        "INSERT INTO public.\"" + this.table + "\" (id,user_id,amount,transaction_time) VALUES (?,?,?,?)"
                 );
 
-        stmt_ticket.setObject(0, this.id);
-        stmt_ticket.setObject(1, this.userId);
-        stmt_ticket.setFloat(2, this.amount);
-        stmt_ticket.setTimestamp(3, this.transactionTime);
+        stmt_ticket.setObject(1, this.id);
+        stmt_ticket.setObject(2, this.userId);
+        stmt_ticket.setFloat(3, this.amount);
+        stmt_ticket.setTimestamp(4, this.transactionTime);
+        
+        System.out.println(stmt_ticket.toString());
 
         int execute = stmt_ticket.executeUpdate();
         
@@ -90,10 +93,10 @@ public class Ticket implements Serializable {
                 item.id=UUID.randomUUID();
                 item.ticketId = this.id;
                 
-                stmt_items.setObject(0, item.id);
-                stmt_items.setInt(1, item.count);
-                stmt_items.setObject(2, item.ticketId);
-                stmt_items.setObject(3, item.productId);
+                stmt_items.setObject(1, item.id);
+                stmt_items.setInt(2, item.count);
+                stmt_items.setObject(3, item.ticketId);
+                stmt_items.setObject(4, item.productId);
                 
                 execute = stmt_items.executeUpdate();
             }

@@ -20,8 +20,8 @@ import java.util.UUID;
  */
 public class Product implements Serializable {
 
-    transient private ConectorDB conexion = new ConectorDB("postgres", "postgres");
-    transient private String table = "product";
+    transient private ConectorDB conexion;
+    private final String table = "product";
     public UUID id = null;
     public String name = null;
     public Integer count = null;
@@ -29,7 +29,7 @@ public class Product implements Serializable {
     public String imagePath = null;
 
     public Product() {
-
+        
     }
 
     public Product(
@@ -44,6 +44,7 @@ public class Product implements Serializable {
     }
 
     public List<Product> All() throws SQLException {
+        this.conexion = new ConectorDB("postgres", "postgres");
         List<Product> all = new ArrayList<>();
         this.conexion.Conectar();
         Statement stmt = this.conexion.connection.createStatement();
@@ -63,18 +64,19 @@ public class Product implements Serializable {
     }
 
     public boolean Save() throws SQLException {
+        this.conexion = new ConectorDB("postgres", "postgres");
         this.conexion.Conectar();
         PreparedStatement stmt = this.conexion.connection
                 .prepareStatement(
-                        "INSERT INTO public.\"" + this.table + "\" (id,name,image_path,count,price) VALUES (?,?,?,?,?,?)"
+                        "INSERT INTO public.\"" + this.table + "\" (id,name,image_path,count,price) VALUES (?,?,?,?,?)"
                 );
         this.id = UUID.randomUUID();
 
-        stmt.setObject(0, this.id);
-        stmt.setString(1, this.name);
-        stmt.setString(2, this.imagePath);
-        stmt.setInt(3, this.count);
-        stmt.setFloat(4, this.price);
+        stmt.setObject(1, this.id);
+        stmt.setString(2, this.name);
+        stmt.setString(3, this.imagePath);
+        stmt.setInt(4, this.count);
+        stmt.setFloat(5, this.price);
 
         int execute = stmt.executeUpdate();
         this.conexion.Desconectar();
@@ -83,6 +85,7 @@ public class Product implements Serializable {
     }
 
     public void Get(UUID id) throws SQLException {
+        this.conexion = new ConectorDB("postgres", "postgres");
         this.conexion.Conectar();
         Statement stmt = this.conexion.connection.createStatement();
         ResultSet result = stmt.executeQuery("SELECT * FROM public.\"" + this.table + "\" where id = '" + id.toString() + "'");
@@ -99,6 +102,7 @@ public class Product implements Serializable {
     }
 
     public void GetByEmail(String email) throws SQLException {
+        this.conexion = new ConectorDB("postgres", "postgres");
         this.conexion.Conectar();
         Statement stmt = this.conexion.connection.createStatement();
         ResultSet result = stmt.executeQuery("SELECT * FROM public.\"" + this.table + "\" where email = '" + email + "'");
@@ -115,13 +119,14 @@ public class Product implements Serializable {
     }
 
     public boolean Delete() throws SQLException {
+        this.conexion = new ConectorDB("postgres", "postgres");
         this.conexion.Conectar();
         PreparedStatement stmt = this.conexion.connection
                 .prepareStatement(
                         "DELETE FROM public.\"" + this.table + "\" WHERE id = ? "
                 );
 
-        stmt.setObject(0, this.id);
+        stmt.setObject(1, this.id);
 
         int execute = stmt.executeUpdate();
         this.conexion.Desconectar();
@@ -130,14 +135,15 @@ public class Product implements Serializable {
     }
 
     public boolean UpdateCount(int newCount) throws SQLException {
+        this.conexion = new ConectorDB("postgres", "postgres");
         this.conexion.Conectar();
         PreparedStatement stmt = this.conexion.connection
                 .prepareStatement(
                         "UPDATE public.\"" + this.table + "\" SET count = ? WHERE id = ? "
                 );
 
-        stmt.setInt(0, newCount);
-        stmt.setObject(1, this.id);
+        stmt.setInt(1, newCount);
+        stmt.setObject(2, this.id);
 
         int execute = stmt.executeUpdate();
         this.conexion.Desconectar();
